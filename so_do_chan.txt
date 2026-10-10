@@ -1,0 +1,77 @@
+==================================================
+SƠ ĐỒ CHÂN VI ĐIỀU KHIỂN ATMEGA128 (U1)
+(Trích xuất từ sơ đồ nguyên lý)
+==================================================
+
+--- PORT A ---
+PA0 (Pin 34)  : LCD-RS
+PA1 (Pin 35)  : LCD-RW
+PA2 (Pin 36)  : LCD-EN
+PA3 (Pin 37)  : LCD-D4
+PA4 (Pin 38)  : LCD-D5
+PA5 (Pin 39)  : LCD-D6
+PA6 (Pin 40)  : LCD-D7
+PA7 (Pin 33)  : 7SEG-EN
+
+--- PORT B ---
+PB0 (Pin 19)  : BHT1
+PB1 (Pin 20)  : 7SEG-DP
+PB2 (Pin 21)  : BHT2
+PB3 (Pin 26)  : RELAY3
+PB4 (Pin 27)  : RELAY2
+PB5 (Pin 28)  : RELAY1
+PB6 (Pin 22)  : LCD-BL (Backlight)
+PB7 (Pin 23)  : BUZZER
+
+--- PORT C ---
+PC0 (Pin 55)  : ROW1
+PC1 (Pin 56)  : ROW2
+PC2 (Pin 57)  : ROW3
+PC3 (Pin 58)  : 7SEG-EN
+PC4 (Pin 59)  : COL1
+PC5 (Pin 60)  : COL2
+PC6 (Pin 61)  : COL3
+PC7 (Pin 62)  : 7SEG-EN
+
+--- PORT D ---
+PD0 (Pin 25)  : RXD0
+PD1 (Pin 26)  : TXD0
+PD2 (Pin 27)  : RXD1
+PD3 (Pin 28)  : TXD1
+PD4 (Pin 29)  : LED-R (Đỏ)
+PD5 (Pin 30)  : LED-G (Xanh lá)
+PD6 (Pin 31)  : LED-Y (Vàng)
+PD7 (Pin 32)  : LED-B (Xanh dương)
+
+--- PORT F ---
+PF0 (Pin 61)  : 7SEG-A
+PF1 (Pin 62)  : 7SEG-B
+PF2 (Pin 63)  : 7SEG-C
+PF3 (Pin 64)  : 7SEG-D
+PF4 (Pin 65)  : 7SEG-E
+PF5 (Pin 66)  : 7SEG-F
+PF6 (Pin 67)  : 7SEG-G
+PF7 (Pin 68)  : ADC7
+
+--- PORT G ---
+PEN (Pin 1)   : PEN
+PG0 (Pin 2)   : WR
+PG1 (Pin 3)   : RD
+PG2 (Pin 4)   : ALE
+PG3 (Pin 5)   : TOSC2
+PG4 (Pin 6)   : TOSC1
+
+--- CÁC CHÂN HỆ THỐNG KHÁC ---
+RESET (Pin 20) : Nút nhấn Reset (RST_SIM_2)
+XTAL1 (Pin 24) : Kết nối thạch anh X2 (kèm tụ C1, C2)
+XTAL2 (Pin 23) : Kết nối thạch anh X2 (kèm tụ C1, C2)
+AREF (Pin 62)  : Kết nối cuộn cảm L1 (10uH) và tụ C3 (0.1uF) xuống GND
+AVCC (Pin 64)  : Nguồn VCC
+VCC  (Pin 7, 42, 60) : Nguồn VCC
+GND  (Pin 8, 41, 63) : Nối đất (GND)
+
+==================================================
+GHI CHÚ:
+- Sơ đồ nguyên lý này có một số điểm không nhất quán (ví dụ: Pin 20 vừa ghi là RESET vừa ghi là PB1; Pin 23 vừa ghi là XTAL2 vừa ghi là PB7; PA7 và PC3, PC7 đều ghi là 7SEG-EN). 
+- Bảng trên liệt kê y nguyên các nhãn xuất hiện trên hình ảnh sơ đồ để bạn tiện đối chiếu khi đấu dây thực tế.
+==================================================
