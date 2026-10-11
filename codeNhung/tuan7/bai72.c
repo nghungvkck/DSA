@@ -1,254 +1,125 @@
-// Bắt đầu:
-//     Khởi tạo LCD
-//     Khởi tạo ADC
-//     Khởi tạo I/O
-//     dem = 0
-
-//     Vòng lặp vô hạn:
-//         // 1. Đọc dữ liệu
-//         Ngưỡng = Đọc_EEPROM()
-//         GiaTriADC = Đọc_ADC()
-
-//         // 2. Điều khiển Relay
-//         Nếu (GiaTriADC < Ngưỡng):
-//             Tắt Role
-//         Ngược lại:
-//             Bật Role
-
-//         // 3. Kiểm tra nút nhấn BT_2
-//         Nếu (BT_2 == Được_nhấn):
-//             dem = dem + 1
-
-//             Nếu (dem == 1):
-//                 ADC_toi = Đọc_ADC()
-//             Ngược lại nếu (dem == 2):
-//                 ADC_sang = Đọc_ADC()
-//             Ngược lại nếu (dem == 3):
-//                 Ngưỡng_moi = (ADC_toi + ADC_sang) / 2
-//                 Ghi_EEPROM(Ngưỡng_moi)
-//                 dem = 0
-
-//         // 4. Lặp lại
-//         Chờ một khoảng thời gian (delay)
-//         Quay lại Vòng lặp vô hạn
-// Kết thúc
-
-
 #include <mega128.h>
 #include <delay.h>
 #include <stdio.h>
 #include <alcd.h>
 
-// =====================================
-// PIN DEFINITIONS
-// =====================================
+#define BT_1 PINB.2
+#define BT_2 PINB.3
 
-// Button BT2: PD2, active LOW
-#define BT_2 PIND.2
+#define RELAY_1 PORTC.3
+#define RELAY_2 PORTC.2
+#define RELAY_3 PORTC.1
+#define RELAY_4 PORTC.0
 
-// Relays: PC0-PC3, active LOW
-#define RELAY_1 PORTC.0
-#define RELAY_2 PORTC.1
-#define RELAY_3 PORTC.2
-#define RELAY_4 PORTC.3
-
-// =====================================
-// EEPROM
-// =====================================
 eeprom unsigned int threshold_ee;
 
-// =====================================
-// GLOBAL VARIABLES
-// =====================================
-unsigned char dem = 0;
-
-unsigned int adc_dark = 0;
-unsigned int adc_light = 0;
-unsigned int threshold = 0;
-unsigned int current_adc = 0;
-
 char buf[17];
+int current_adc, adc_dark, adc_light, threshold;
+char count = 0;
+bit auto_mode = 0;
 
-// =====================================
-// READ ADC
-// =====================================
-unsigned int read_adc(unsigned char adc_input)
-{
-    ADMUX = (adc_input & 0x07) | 0x40;
-
+unsigned int read_adc(unsigned char adc_input) {
+    ADMUX = (adc_input & 0x1F) | 0x40;
     delay_us(10);
-
-    // Start conversion
-    ADCSRA |= (1 << ADSC);
-
-    // Wait until conversion completes
-    while (ADCSRA & (1 << ADSC));
-
+    ADCSRA |= 0x40;
+    while ((ADCSRA & 0x10) == 0);
+    ADCSRA |= 0x10;
     return ADCW;
 }
 
-// =====================================
-// RELAY CONTROL (ACTIVE LOW)
-// =====================================
-void role_on(void)
-{
-    RELAY_1 = 0;
-    RELAY_2 = 0;
-    RELAY_3 = 0;
+void role_off(void) {
+    RELAY_1 = 0; 
+    RELAY_2 = 0; 
+    RELAY_3 = 0; 
     RELAY_4 = 0;
 }
 
-void role_off(void)
-{
-    RELAY_1 = 1;
-    RELAY_2 = 1;
-    RELAY_3 = 1;
-    RELAY_4 = 1;
+void role_on(void) {
+    RELAY_1 = 1; delay_ms(1000);
+    RELAY_2 = 1; delay_ms(1000);
+    RELAY_3 = 1; delay_ms(1000);
+    RELAY_4 = 1; delay_ms(1000);
 }
 
-// =====================================
-// DISPLAY LCD LINE
-// =====================================
-void show_line(unsigned char row, char *s)
-{
-    unsigned char i = 0;
-
-    lcd_gotoxy(0, row);
-
-    while (i < 16 && s[i] != '\0')
-    {
-        lcd_putchar(s[i]);
-        i++;
-    }
-
-    while (i < 16)
-    {
-        lcd_putchar(' ');
-        i++;
-    }
-}
-
-// =====================================
-// MAIN PROGRAM
-// =====================================
-void main(void)
-{
-    // 1. Initialize I/O
-    DDRC = (DDRC & 0xF0) | 0x0F;
-
-    // All relays OFF initially
-    role_off();
-
-    // BT2 input with internal pull-up
-    DDRD &= ~(1 << DDD2);
-    PORTD |= (1 << PORTD2);
-
-    // 2. Initialize ADC
-    ADMUX = 0x40;       // AVCC reference
-    ADCSRA = 0x87;      // ADC enable, prescaler 128
+void main(void) {
+    DDRC = 0x0F; 
+    PORTC = 0x00; 
+    DDRB = 0x00;
+    PORTB = 0x0C; 
+    DDRD = 0x80; 
+    PORTD = 0x80;
+    ADMUX = 0x40; 
+    ADCSRA = 0x87; 
     SFIOR = 0x00;
 
-    // 3. Initialize LCD
-    lcd_init(16);
+    lcd_init(16); 
     lcd_clear();
 
-    dem = 0;
+    threshold = threshold_ee;
+    lcd_gotoxy(0, 0); 
+    lcd_puts("BT-1: Nguong");
+    lcd_gotoxy(0, 1); 
+    lcd_puts("BT-2: Auto");
 
-    show_line(0, "SYSTEM READY");
-    show_line(1, "INITIALIZING...");
-    delay_ms(1000);
-
-    // =================================
-    // INFINITE LOOP
-    // =================================
-    while (1)
-    {
-        // ---------------------------------
-        // 1. READ EEPROM AND ADC
-        // ---------------------------------
-        threshold = threshold_ee;
-        current_adc = read_adc(7);
-
-        // ---------------------------------
-        // 2. CONTROL RELAYS
-        // ---------------------------------
-        if (current_adc < threshold)
-        {
-            role_off();
-        }
-        else
-        {
-            role_on();
-        }
-
-        // ---------------------------------
-        // 3. CHECK BUTTON BT2
-        // ---------------------------------
-        if (BT_2 == 0)
-        {
+    while (1) {
+        if (BT_1 == 0) {
             delay_ms(20);
-
-            if (BT_2 == 0)
-            {
-                dem++;
-
-                if (dem == 1)
-                {
-                    // First press: measure darkness
+            if (BT_1 == 0) {
+                count++;
+                if (count == 1) {
                     adc_dark = read_adc(7);
-
-                    show_line(0, "CALIBRATION 1");
-                    sprintf(buf, "DARK: %4u", adc_dark);
-                    show_line(1, buf);
+                    lcd_clear();
+                    lcd_gotoxy(0, 0); 
+                    lcd_puts("L1: ADC TOI");
+                    sprintf(buf, "%4u", adc_dark);
+                    lcd_gotoxy(0, 1); 
+                    lcd_puts(buf);
                 }
-                else if (dem == 2)
-                {
-                    // Second press: measure bright light
+                else if (count == 2) {
                     adc_light = read_adc(7);
-
-                    show_line(0, "CALIBRATION 2");
-                    sprintf(buf, "LIGHT: %4u", adc_light);
-                    show_line(1, buf);
+                    lcd_clear();
+                    lcd_gotoxy(0, 0); 
+                    lcd_puts("L2: ADC SANG");
+                    sprintf(buf, "%4u", adc_light);
+                    lcd_gotoxy(0, 1); 
+                    lcd_puts(buf);
                 }
-                else if (dem == 3)
-                {
-                    // Third press: calculate and save
+                else if (count == 3) {
                     threshold = (adc_dark + adc_light) / 2;
-
-                    // Save new threshold to EEPROM
                     threshold_ee = threshold;
-
-                    dem = 0;
-
-                    show_line(0, "THRESHOLD SAVED");
-                    sprintf(buf, "TH: %4u", threshold);
-                    show_line(1, buf);
-
-                    delay_ms(1000);
+                    count = 0;
+                    lcd_clear();
+                    lcd_gotoxy(0, 0); 
+                    lcd_puts("L3: NGUONG");
+                    sprintf(buf, "%4u", threshold);
+                    lcd_gotoxy(0, 1); 
+                    lcd_puts(buf);
                 }
-
-                // Wait for button release
-                while (BT_2 == 0);
-
-                delay_ms(20);
+                while (BT_1 == 0);
             }
         }
 
-        // ---------------------------------
-        // 4. UPDATE LCD WHEN NOT CALIBRATING
-        // ---------------------------------
-        if (dem == 0)
-        {
-            sprintf(buf, "ADC: %4u", current_adc);
-            show_line(0, buf);
-
-            sprintf(buf, "TH: %4u", threshold);
-            show_line(1, buf);
+        if (BT_2 == 0) {
+            delay_ms(20);
+            if (BT_2 == 0) {
+                auto_mode = !auto_mode;
+                if (!auto_mode) role_off();
+                lcd_clear(); 
+                lcd_gotoxy(0, 0);
+                lcd_puts(auto_mode ? "AUTO: ON" : "AUTO: OFF");
+                while (BT_2 == 0);
+            }
         }
 
-        // ---------------------------------
-        // 5. DELAY
-        // ---------------------------------
-        delay_ms(100);
+        if (auto_mode) {
+            current_adc = read_adc(7);
+            if (current_adc < threshold) role_on();
+            else role_off();
+
+            lcd_gotoxy(0, 0);
+            sprintf(buf, "ADC:%4u", current_adc);
+            lcd_puts(buf);
+            delay_ms(100);
+        }
     }
 }

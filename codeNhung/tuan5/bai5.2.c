@@ -28,7 +28,7 @@ void main(void){
     glcd_init_data.font = font5x7;         // font s? d?ng
     glcd_init_data.temp_coef = 80;        // h? s? nhi?t d?
     glcd_init_data.bias = 3;               // h? s? bias
-    glcd_init_data.vlcd = 65;              // di?n áp ngu?n
+    glcd_init_data.vlcd = 55;              // di?n áp ngu?n
     glcd_init(&glcd_init_data);            // kh?i t?o GLCD
     glcd_putimagef(38, 20, heart, 1);          // hi?n th? trái tim den t?i t?a d? (38, 20)
 
