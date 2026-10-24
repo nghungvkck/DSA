@@ -83,9 +83,9 @@ void main(void)
     {
         adc = read_adc(7);
         percent = (unsigned int)(adc *100) /1023;
-        if (percent < 60) LED = 1;
+        if (percent < 40) LED = 1;
         else  LED = 0;
-        if ( percent >= 70) glcd_putimagef(0,0, sun_icon, 1);
+        if ( percent >= 50) glcd_putimagef(0,0, sun_icon, 1);
         else glcd_putimagef(0, 0 , sun_dim_icon, 1);
         glcd_line(50,0,50,48);
         sprintf(buffer, "%3d%%", percent);
