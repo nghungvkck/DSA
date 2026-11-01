@@ -1,3 +1,7 @@
+// Hien thi nhan vat Roly (3 tu the) va ngoi sao nhap nhay tren GLCD
+// BT1 (PB2): Roly lac qua lai (trai - giua - phai - giua) 2 vong
+// BT2 (PB3): Ngoi sao nhap nhay 5 lan
+
 #include <io.h>
 #include <glcd.h>
 #include <font5x7.h>
@@ -5,13 +9,16 @@
 
 #define BT1 PINB.2
 #define BT2 PINB.3
-#define ROY_X 30
-#define ROY_Y 8
-#define STAR_X 60
-#define STAR_Y 20
 
+// Toa do ve co dinh tren man hinh 128x64
+#define ROY_X  30      // Roly o cot 30
+#define ROY_Y   8      // Roly o dong 8
+#define STAR_X 60      // Sao o cot 60
+#define STAR_Y 20      // Sao o dong 20
+
+// 3 bitmap Roly (24x32), luu trong FLASH
 flash unsigned char roly_left[] = {
-    0x18, 0x00, 0x20, 0x00,
+    0x18, 0x00, 0x20, 0x00,           // width=24, height=32
     0x00, 0x00, 0x00, 0x00, 0xC0, 0xE0, 0x70, 0x78,
     0x38, 0x38, 0x38, 0x78, 0x70, 0xE0, 0xC0, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -27,7 +34,7 @@ flash unsigned char roly_left[] = {
 };
 
 flash unsigned char roly_center[] = {
-    0x18, 0x00, 0x20, 0x00,
+    0x18, 0x00, 0x20, 0x00,           // width=24, height=32
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0,
     0xE0, 0x70, 0x78, 0x38, 0x38, 0x38, 0x78, 0x70,
     0xE0, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -43,7 +50,7 @@ flash unsigned char roly_center[] = {
 };
 
 flash unsigned char roly_right[] = {
-    0x18, 0x00, 0x20, 0x00,
+    0x18, 0x00, 0x20, 0x00,           // width=24, height=32
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0xC0, 0xE0, 0x70, 0x78, 0x38, 0x38,
     0x38, 0x78, 0x70, 0xE0, 0xC0, 0x00, 0x00, 0x00,
@@ -58,63 +65,69 @@ flash unsigned char roly_right[] = {
     0xF0, 0xF0, 0xF8, 0x7C, 0x7F, 0x7F, 0x6F, 0x07
 };
 
+// Bitmap ngoi sao (12x12), luu trong FLASH
 flash unsigned char star_bitmap[] = {
-    0x0C, 0x00, 0x0C, 0x00,
+    0x0C, 0x00, 0x0C, 0x00,           // width=12, height=12
     0x00, 0x10, 0x38, 0xF8, 0xFC, 0xFF, 0xFC, 0xF8,
     0x38, 0x10, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01,
     0x01, 0x00, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00
 };
 
+// Xoa man hinh roi ve Roly o toa do co dinh
 void roly_show(flash unsigned char *img) {
     glcd_clear();
     glcd_putimagef(ROY_X, ROY_Y, img, 1);
 }
 
+// Mot vong lac: trai -> giua -> phai -> giua, moi tu the 120ms
 void roly_sway_once(void) {
-    roly_show(roly_left); delay_ms(120);
+    roly_show(roly_left);   delay_ms(120);
     roly_show(roly_center); delay_ms(120);
-    roly_show(roly_right); delay_ms(120);
+    roly_show(roly_right);  delay_ms(120);
     roly_show(roly_center); delay_ms(120);
 }
 
+// Nhay sao 5 lan: ve 250ms -> xoa 250ms
 void blink_star(void) {
     int i;
     for (i = 0; i < 5; i++) {
         glcd_putimagef(STAR_X, STAR_Y, star_bitmap, 1);
         delay_ms(250);
-        glcd_putimagef(STAR_X, STAR_Y, star_bitmap, 1);    
+        glcd_clear();                  // xoa de tao hieu ung nhay
         delay_ms(250);
     }
 }
 
 void main(void) {
     GLCDINIT_t glcd_init_data;
-    
-    DDRD = 0x80;
-    PORTD = 0x80;
-    DDRB = 0x00;
-    PORTB = 0x0C;
 
+    DDRD = 0x80;
+    PORTD = 0x80;                 // bat den nen GLCD
+    DDRB = 0x00;
+    PORTB = 0x0C;                 // pull-up cho BT1, BT2
+
+    // Khoi tao GLCD 128x64
     glcd_init_data.font = font5x7;
     glcd_init_data.temp_coef = 60;
     glcd_init_data.bias = 3;
     glcd_init_data.vlcd = 50;
-
     glcd_init(&glcd_init_data);
 
-    roly_show(roly_center);
+    roly_show(roly_center);       // mac dinh: Roly dung giua
 
     while (1) {
+        // BT1: Roly lac 2 vong
         if (BT1 == 0) {
-            delay_ms(20);
+            delay_ms(20);                     // chong doi
             if (BT1 == 0) {
                 roly_sway_once();
                 roly_sway_once();
                 roly_show(roly_center);
-                while (BT1 == 0);
+                while (BT1 == 0);             // cho nha nut
             }
         }
 
+        // BT2: sao nhay 5 lan
         if (BT2 == 0) {
             delay_ms(20);
             if (BT2 == 0) {
